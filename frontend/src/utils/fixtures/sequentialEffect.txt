@@ -1,0 +1,44 @@
+class Effect {
+  static CONTRACT_VERSION = 2;
+
+  static CONFIG = {
+    base_size: {
+      default: 10,
+      type: 'range',
+      min: 1,
+      max: 100,
+      step: 1,
+      label: 'Base size',
+      description: 'Sets the starting size of the test marker',
+    },
+  };
+
+  constructor() {
+    this.age = 0;
+    this.samples = [];
+  }
+
+  display(sketch, frameData, params) {
+    if (frameData.discontinuity !== 'none') {
+      this.age = 0;
+      this.samples = [];
+    }
+
+    if (frameData.isNewFrame) {
+      this.age += frameData.deltaFrames || 1;
+      this.samples.push(frameData.currentFrame);
+      this.samples = this.samples.slice(-4);
+    }
+
+    sketch.push();
+    sketch.noStroke();
+    sketch.fill('#ffffff');
+    sketch.ellipse(
+      frameData.width / 2,
+      frameData.height / 2,
+      params.base_size + this.age,
+      this.samples.length,
+    );
+    sketch.pop();
+  }
+}

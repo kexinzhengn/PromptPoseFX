@@ -1,0 +1,18 @@
+# Web service and configuration
+fastapi==0.136.1
+uvicorn==0.47.0
+python-multipart==0.0.29
+python-dotenv==1.0.1
+pydantic==2.11.4
+
+# Agent and model clients
+langgraph==1.1.6
+langgraph-checkpoint-sqlite==3.1.1
+langchain-core==1.2.31
+langchain-openai==1.1.14
+openai==2.32.0
+
+# Video, pose tracking, and generated-code validation
+mediapipe==0.10.20
+numpy==1.26.4
+opencv-contrib-python==4.11.0.86
