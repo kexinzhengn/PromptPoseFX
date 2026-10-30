@@ -64,39 +64,3 @@ Requirements: Python 3.10.16, Node.js 20.19+ (see `.python-version` and `.nvmrc`
    ```
 
 Open `http://localhost:5200`. The frontend proxies `/api/*` to the backend on port 5800. Upload a video from the top bar and wait for pose processing to finish before creating an Effect. The frontend does not ship with a sample video or pre-generated Effects.
-
-## Verify
-
-From `vfx-agent-backend/` with the Python environment active:
-
-```bash
-python -m pytest -q
-```
-
-From `frontend/`:
-
-```bash
-npm test
-npm run lint
-npm run build
-```
-
-These are the offline checks run by CI. Tests marked `live` are excluded by default because they call a real model endpoint and may incur API costs.
-
-## Repository layout
-
-```text
-frontend/           React editor, canvas overlays, playback, and UI tests
-vfx-agent-backend/  FastAPI service, agents, pose pipeline, storage, and tests
-shared/             Control-resolution runtime shared by preview and validation
-.github/workflows/  Offline CI checks
-```
-
-Local videos, generated Effects, logs, model files, and checkpoints are ignored by Git.
-
-## Current limitations
-
-- Pose is the primary visual input. The agent cannot reliably inspect clothing color, scene objects, or occlusion from video pixels.
-- Uploaded videos are extracted at a target of 30 FPS and resized to 640×360 for processing and preview; original aspect ratio and resolution are not preserved.
-- Effects are previewed in the editor. There is no finished-video export workflow yet.
-- The app is designed for local use; it does not provide accounts, multi-user collaboration, or a hosted deployment.
