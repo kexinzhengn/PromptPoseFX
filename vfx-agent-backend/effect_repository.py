@@ -734,6 +734,35 @@ class EffectRepository:
                     continue
             return snapshots
 
+    def get_reference_summary(self, effect_id: str, version: dict) -> str | None:
+        """Read derived data only when its source version still matches."""
+        with self._lock:
+            path = self._effect_dir(effect_id) / "reference_summary.json"
+            try:
+                cached = json.loads(path.read_text(encoding="utf-8"))
+            except (OSError, ValueError):
+                return None
+            if not isinstance(cached, dict) or cached.get("version") != version:
+                return None
+            summary = cached.get("summary")
+            return summary if isinstance(summary, str) and summary.strip() else None
+
+    def cache_reference_summary(self, effect_id: str, version: dict, summary: str) -> None:
+        """Avoid resurrecting deleted Effects or caching an obsolete snapshot."""
+        with self._lock:
+            try:
+                current = self._read_snapshot(effect_id, self._read_index())
+            except EffectNotFoundError:
+                return
+            if (current.revision, current.editor_revision) != (
+                version["revision"], version["editor_revision"]
+            ):
+                return
+            self._write_json_atomic(
+                self._effect_dir(effect_id) / "reference_summary.json",
+                {"version": version, "summary": summary},
+            )
+
     def delete(self, effect_id: str) -> bool:
         """Delete one Effect directory and its index entry."""
         with self._lock:

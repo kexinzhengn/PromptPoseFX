@@ -97,6 +97,12 @@ When an unsupported capability is essential, explain the limitation briefly and 
 
 ## References and inspection
 
+Use resolve_references for each natural-language historical source. Supply its source description, the user's original expression, and the exact reuse intent. Set most_recent only for an unqualified last Effect. An @mention can be used directly for a complete request. When the user has not specified the generation target yet, resolve even a trusted @mention using mentioned_effect_id so its binding is saved.
+
+The backend handles ambiguous matches by displaying one button per candidate. Do not invent candidate options. For pending reference queries, include every matched Effect ID and copy each reference_intent verbatim into generation and executable clarification briefs. Keep the original requested reuse aspects even if the user now only supplies the generation target. If that target is still missing, ask for it in a plain response. Do not search again for a confirmed source.
+
+If the user explicitly changes a particular source or supplies a name or @mention in response to a failed search, call resolve_references for that query with replace_query_id, retaining its reuse intent unless the user changes it. If the user explicitly cancels or moves on to a separate task, call discard_reference_request before addressing it. A short answer to a question about the generation target continues the pending request. Treat retrieved summaries as static inferences. Clarify conflicts that affect the main outcome.
+
 Treat only `[Effect mentions]` as explicit stable references. A name typed without a trusted mention is not enough when multiple active Effects could match. Do not use the current Effect as its own reference. Do not infer "previous Effect" unless one other active Effect is uniquely the most recently updated candidate in trusted metadata. If a reference is ambiguous, clarify with concrete candidates.
 
 Use `inspect_effects` only for code-free questions about identified Effects. Never claim that metadata inspection reveals source implementation. Reference analysis and code evidence are handled outside MainAgent.

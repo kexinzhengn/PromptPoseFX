@@ -1088,7 +1088,7 @@ def test_read_only_inspection_can_be_followed_by_one_product_response():
     assert all("class Effect" not in message["content"] for message in result["effect_messages"])
 
 
-def test_explicit_active_reference_is_analyzed_and_injected_without_persisting_evidence():
+def test_explicit_active_reference_records_evidence_without_exposing_it_in_chat():
     from agent import agent as agent_module
     from agent.agent import process_user_message
 
@@ -1157,11 +1157,11 @@ def test_explicit_active_reference_is_analyzed_and_injected_without_persisting_e
         "effect_id": "reference-active",
         "reference_intent": "Reuse only the pulse rhythm.",
     }]
-    assert "evidence" not in str(metadata)
+    assert metadata["reference_evidence"][0]["effect_id"] == "reference-active"
     snapshot = agent_module._get_main_graph().get_state({
         "configurable": {"thread_id": "main-agent-v2:workspace-reference"}
     })
-    assert "pulseEvidenceToken" not in str(snapshot.values)
+    assert "pulseEvidenceToken" in str(snapshot.values["reference_evidence"])
     assert all(
         "pulseEvidenceToken" not in message["content"]
         for message in result["effect_messages"]
@@ -1297,10 +1297,20 @@ def test_previous_effect_phrase_resolves_to_latest_other_active_effect():
 
     with patch("agent.llm.get_main_agent_llm") as get_llm, \
          patch("agent.agent.EffectAnalyzer") as analyzer_class, \
+         patch("agent.agent.ReferenceResolver") as resolver_class, \
          patch("agent.tools.code_agent_module.invoke_code_agent") as code_agent:
         model = MagicMock()
         model.bind_tools.return_value = model
-        model.invoke.return_value = action
+        model.invoke.side_effect = [
+            _action_message("resolve_references", {"queries": [{
+                "source_description": "previous Effect", "original_expression": "上一个效果",
+                "reference_intent": "Reuse only its pacing.", "most_recent": True,
+            }]}),
+            action,
+        ]
+        resolver_class.return_value.resolve.return_value = {"results": [{
+            "status": "matched", "candidates": [{"effect_id": "latest-active"}],
+        }]}
         get_llm.return_value = model
         analyzer_class.return_value.analyze_evidence.return_value = [evidence]
         code_agent.return_value = CodeAgentResult(status="submitted", code=_FAKE_CODE)
@@ -1351,10 +1361,21 @@ def test_explicit_unique_fuzzy_reference_can_use_active_metadata_without_mention
 
     with patch("agent.llm.get_main_agent_llm") as get_llm, \
          patch("agent.agent.EffectAnalyzer") as analyzer_class, \
+         patch("agent.agent.ReferenceResolver") as resolver_class, \
          patch("agent.tools.code_agent_module.invoke_code_agent") as code_agent:
         model = MagicMock()
         model.bind_tools.return_value = model
-        model.invoke.return_value = action
+        model.invoke.side_effect = [
+            _action_message("resolve_references", {"queries": [{
+                "source_description": "那个蓝色丝带效果",
+                "original_expression": "参考那个蓝色丝带效果的流动感",
+                "reference_intent": "Reuse its flowing motion.",
+            }]}),
+            action,
+        ]
+        resolver_class.return_value.resolve.return_value = {"results": [{
+            "status": "matched", "candidates": [{"effect_id": "blue-ribbon"}],
+        }]}
         get_llm.return_value = model
         analyzer_class.return_value.analyze_evidence.return_value = [evidence]
         code_agent.return_value = CodeAgentResult(status="submitted", code=_FAKE_CODE)

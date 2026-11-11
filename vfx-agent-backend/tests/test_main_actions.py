@@ -10,10 +10,12 @@ from agent.schemas import ClarifyAction, GenerateAction, RespondAction
 
 def test_main_agent_tools_expose_only_supported_product_actions():
     assert [tool.name for tool in MAIN_AGENT_TOOLS] == [
+        "resolve_references",
         "ask_clarification",
         "generate_effect",
         "update_effect",
         "inspect_effects",
+        "discard_reference_request",
     ]
 
 

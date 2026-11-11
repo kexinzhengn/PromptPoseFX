@@ -163,10 +163,14 @@ def _build_saved_effect_evidence_message(
         lines.extend([
             f"\nEffect ID: {item.effect_id}",
             f"Reference intent: {item.reference_intent}",
+            f"Source revision: {item.revision}; editor revision: {item.editor_revision}.",
+            f"Source video: {item.video_id}; total frames: {item.total_frames}.",
+            "Saved state values override source defaults. Adapt source space and timing to the target video. Map source controls to existing target controls; never copy stale control IDs.",
         ])
         for finding in item.findings:
             lines.extend([
                 f"- Role: {finding.role}",
+                f"  Source: {finding.source}; field path: {finding.path}",
                 f"  Exact evidence: {finding.evidence}",
                 f"  Intended use: {finding.usage}",
             ])

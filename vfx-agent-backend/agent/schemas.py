@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import TypedDict, Annotated, Sequence, Literal, Union
+from typing import Any, TypedDict, Annotated, Sequence, Literal, Union
 from langchain_core.messages import BaseMessage
 from langgraph.graph.message import add_messages
 from pydantic import BaseModel, ConfigDict, Field, StrictBool, StrictFloat, StrictInt, StrictStr
@@ -25,6 +25,36 @@ class ReferenceSource(BaseModel):
     effect_id: str = Field(min_length=1)
     code: str = Field(min_length=1)
     reference_intent: str = Field(min_length=1)
+    params: dict[str, Any] = Field(default_factory=dict)
+    editor_state: dict[str, Any] = Field(default_factory=dict)
+    revision: int = 0
+    editor_revision: int = 0
+    video_id: str = ""
+    total_frames: int = 0
+
+
+class ReferenceQuery(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    source_description: str = Field(min_length=1)
+    original_expression: str = Field(min_length=1)
+    reference_intent: str = Field(min_length=1)
+    most_recent: bool = False
+    mentioned_effect_id: str = ""
+    replace_query_id: str = ""
+
+
+class ResolveReferencesAction(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    action: Literal["resolve_references"] = "resolve_references"
+    queries: list[ReferenceQuery] = Field(min_length=1, max_length=5)
+
+
+class DiscardReferencesAction(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    action: Literal["discard_reference_request"] = "discard_reference_request"
 
 
 class ReferenceFinding(BaseModel):
@@ -32,6 +62,8 @@ class ReferenceFinding(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
+    source: Literal["code", "state"] = "code"
+    path: list[str] = Field(default_factory=list)
     role: str = Field(min_length=1, max_length=120)
     evidence: str = Field(min_length=1, max_length=2000)
     usage: str = Field(min_length=1, max_length=500)
@@ -44,6 +76,10 @@ class ReferenceEvidence(BaseModel):
 
     effect_id: str = Field(min_length=1)
     reference_intent: str = Field(min_length=1)
+    revision: int = 0
+    editor_revision: int = 0
+    video_id: str = ""
+    total_frames: int = 0
     findings: list[ReferenceFinding] = Field(min_length=1, max_length=5)
 
 
@@ -89,7 +125,7 @@ class ClarifyAction(BaseModel):
 
     action: Literal["clarify"] = "clarify"
     question: str = Field(min_length=1)
-    options: list[ClarificationOption] = Field(min_length=2, max_length=4)
+    options: list[ClarificationOption] = Field(min_length=1)
 
 
 class GenerateAction(GenerationBrief):
@@ -119,6 +155,8 @@ MainAgentAction = Annotated[
         GenerateAction,
         UpdateEffectAction,
         InspectEffectsAction,
+        ResolveReferencesAction,
+        DiscardReferencesAction,
     ],
     Field(discriminator="action"),
 ]
@@ -162,6 +200,11 @@ class AgentState(TypedDict):
     action_name: str                        # Current action discriminator.
     action_result: dict                     # Code-controlled execution result.
     action_error: str                       # Deterministic schema or execution failure.
+    reference_queries: list[dict]
+    reference_choice: bool
+    reference_control_ids: list[str]
+    reference_evidence: list[dict]
+    resolution_count: int
     inspection_count: int                   # Read-only inspections performed this turn.
     pending_options: dict[str, dict]         # One-use option ID to generation brief mapping.
     forced_action: dict                     # Stored option action executed without the model.

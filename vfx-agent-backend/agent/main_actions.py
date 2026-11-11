@@ -10,10 +10,13 @@ from langchain_core.tools import tool
 from .schemas import (
     ClarificationOption,
     ClarifyAction,
+    DiscardReferencesAction,
     GenerateAction,
     InspectEffectsAction,
     ParameterValue,
     ReferenceRequest,
+    ReferenceQuery,
+    ResolveReferencesAction,
     RespondAction,
     UpdateEffectAction,
 )
@@ -54,15 +57,31 @@ def inspect_effects(effect_ids: list[str], question: str) -> str:
     return "Action accepted."
 
 
+@tool
+def resolve_references(queries: list[ReferenceQuery]) -> str:
+    """Find historical Effects by name, description or conversational reference."""
+    return "Action accepted."
+
+
+@tool
+def discard_reference_request() -> str:
+    """Clear the pending reference request when the user cancels or starts a different task."""
+    return "Action accepted."
+
+
 MAIN_AGENT_TOOLS = [
+    resolve_references,
     ask_clarification,
     generate_effect,
     update_effect,
     inspect_effects,
+    discard_reference_request,
 ]
 
 
 _ACTION_MODELS = {
+    "discard_reference_request": (DiscardReferencesAction, "discard_reference_request"),
+    "resolve_references": (ResolveReferencesAction, "resolve_references"),
     "ask_clarification": (ClarifyAction, "clarify"),
     "generate_effect": (GenerateAction, "generate"),
     "update_effect": (UpdateEffectAction, "update_effect"),
